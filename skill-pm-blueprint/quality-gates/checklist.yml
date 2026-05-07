@@ -1,0 +1,416 @@
+# pm-blueprint 品質ゲート チェックリスト
+# agentic-quality-gate v4 の 49 評価エントリ (P0/P1/cross-cutting × critical/high) を YAML 形式で定義
+# 各エントリは pm-blueprint Layer/サブスキルと紐付け
+
+metadata:
+  version: "4.0-pm-blueprint-2026-04-30"
+  total_entries: 49
+  source: "/Users/shigeru.abe/agentic-quality-gate/reports/2026-04-30_blueprint_review.md"
+
+# ====================================================================
+# P0 Critical (10件中 critical 3件 + high 7件)
+# ====================================================================
+
+p0_critical:
+  - id: LEGAL-INDUSTRY-001
+    severity: critical
+    gate: legal/industry
+    観点: 業法該当性 (運送業/電気通信事業法/個情法/下請法等) の専門家承認
+    ok基準: 業法判定書 + 専門家署名
+    ng基準: 判定書ファイル不在 / 専門家承認なし
+    applies_when: 全案件
+    cited_layer: layer-7-legal-compliance/業法該当性判定書.md
+
+  - id: LEGAL-PII-001
+    severity: critical
+    gate: legal/privacy
+    観点: 個人情報取扱台帳 (項目/取得元/目的/保管期間/第三者提供/越境/法務承認)
+    ok基準: 台帳ファイル存在 + 法務+DPO承認
+    ng基準: 台帳ファイル不在
+    applies_when: PII取扱あり
+    cited_layer: layer-7-legal-compliance/個人情報取扱台帳.md
+
+  - id: LEGAL-TOS-001
+    severity: critical
+    gate: legal/data
+    観点: 外部データ取得元の利用規約適法性
+    applies_when: 外部データ利用時
+    cited_layer: layer-7-legal-compliance/
+
+p0_high:
+  - id: COST-ESTIMATE-001
+    severity: high
+    gate: cost/estimation
+    観点: クラウド/LLM/データの概算コスト試算 + ハードリミット
+    cited_layer: layer-1-executive/意思決定テンプレート.md
+
+  - id: COST-UNIT-001
+    severity: high
+    gate: cost/unit
+    観点: 課金単位 (req/token/storage/transfer) 単価表
+    cited_layer: layer-1-executive/意思決定テンプレート.md
+
+  - id: LEGAL-AIGEN-001
+    severity: high
+    gate: legal/copyright
+    観点: AI生成物の著作権/学習利用/侵害可能性 (法務承認)
+    applies_when: AI生成あり
+    cited_layer: layer-7-legal-compliance/AI生成物著作権ポリシー.md
+
+  - id: LEGAL-CROSSBORDER-001
+    severity: high
+    gate: legal/crossborder
+    観点: 越境データ移転 (DPO承認)
+    cited_layer: layer-7-legal-compliance/越境データ移転書.md
+
+  - id: LEGAL-DATACLASS-001
+    severity: high
+    gate: data/classification
+    観点: データ分類台帳 (公開/内部/機密/極秘) + データオーナー承認
+    cited_layer: layer-7-legal-compliance/データ分類台帳.md
+
+  - id: LEGAL-LICENSE-001
+    severity: high
+    gate: legal/license
+    観点: OSSライセンス (GPL/AGPL汚染、商用可否)
+    cited_layer: layer-7-legal-compliance/OSSライセンス管理.md
+
+  - id: LEGAL-THREATMODEL-001
+    severity: high
+    gate: security/threatmodel
+    観点: STRIDE/LINDDUN による脅威モデル v0
+    cited_layer:
+      - layer-5-risk/脅威モデリング.md
+      - layer-5-risk/LINDDUNプライバシー脅威.md
+
+  - id: STRATEGY-LIFETIME-001
+    severity: high
+    gate: strategy/lifetime
+    観点: 想定寿命/品質投資/昇格判断基準
+    cited_layer: layer-1-executive/意思決定テンプレート.md
+
+# ====================================================================
+# P1 Critical/High (24件: critical 7件 + high 17件)
+# ====================================================================
+
+p1_critical:
+  - id: API-IDEMPOTENCY-001
+    severity: critical
+    gate: api/idempotency
+    観点: 課金/書込APIへのIdempotency-Keyヘッダ仕様 + OpenAPI定義
+    cited_layer: layer-3-architecture/API設計.md
+
+  - id: ARCH-LAYER-001
+    severity: critical
+    gate: architecture/layer
+    観点: IaaS/PaaS/SaaSレイヤ選定ADR + ARB承認
+    cited_layer:
+      - layer-3-architecture/アーキスタイル選定.md
+      - layer-3-architecture/ADR作成.md
+
+  - id: DATA-ENTITY-001
+    severity: critical
+    gate: data/modeling
+    観点: ERD/エンティティ・関係性図 (多対多含む)
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: DATA-TX-001
+    severity: critical
+    gate: data/transaction
+    観点: Tx境界宣言 (範囲/分離レベル/補償処理/タイムアウト)
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: ENV-SEPARATE-001
+    severity: critical
+    gate: env/separation
+    観点: dev/stg/prod環境分離 (DB含む) + IaC + ドリフト検知CI
+    cited_layer: layer-3-architecture/環境分離_IaC.md
+
+  - id: SEC-AUTHZ-DESIGN-001
+    severity: critical
+    gate: security/authz
+    観点: 認可方式 (RBAC/ABAC/ReBAC/OPA) 選定文書 + ポリシー定義 + テスト戦略
+    cited_layer: layer-5-risk/認可方式選定.md
+
+  - id: SEC-TENANT-001
+    severity: critical
+    gate: security/tenant
+    観点: マルチテナント分離 (DB/schema/RLS)
+    applies_when: SaaS/B2B
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+p1_high:
+  - id: API-STYLE-001
+    severity: high
+    gate: api/style
+    観点: API スタイル選定 (REST/GraphQL/gRPC) ADR
+    cited_layer: layer-3-architecture/API設計.md
+
+  - id: API-VERSION-001
+    severity: high
+    gate: api/versioning
+    観点: バージョニング方式 (path/header/media type)
+    cited_layer: layer-3-architecture/API設計.md
+
+  - id: ARCH-AGGREGATE-001
+    severity: high
+    gate: architecture/ddd
+    観点: DDD 集約境界
+    applies_when: DDD採用
+    cited_layer: layer-3-architecture/DDDコンテキスト.md
+
+  - id: ARCH-DDD-001
+    severity: high
+    gate: architecture/ddd
+    観点: 境界づけられたコンテキスト + ユビキタス言語
+    cited_layer: layer-3-architecture/DDDコンテキスト.md
+
+  - id: ARCH-MONOLITH-001
+    severity: high
+    gate: architecture/scale
+    観点: モノリス/モジュラーモノリス/マイクロサービス選定 ADR
+    cited_layer: layer-3-architecture/アーキスタイル選定.md
+
+  - id: ARCH-STYLE-001
+    severity: high
+    gate: architecture/style
+    観点: レイヤード/ヘキサ/オニオン/クリーン選定 ADR
+    cited_layer: layer-3-architecture/アーキスタイル選定.md
+
+  - id: DATA-CONSISTENCY-001
+    severity: high
+    gate: data/consistency
+    観点: ACID vs BASE / 結果整合性
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: DATA-DELETE-001
+    severity: high
+    gate: data/modeling
+    観点: 物理削除 vs 論理削除の決定
+    cited_layer:
+      - layer-3-architecture/データ設計詳細.md
+      - layer-7-legal-compliance/データ保持_削除戦略.md
+
+  - id: DATA-DELIVERY-001
+    severity: high
+    gate: messaging/delivery
+    観点: At-least-once/At-most-once/Exactly-once 選定
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: DATA-HISTORY-001
+    severity: high
+    gate: data/history
+    観点: 履歴保持 (イミュータブル/Event Sourcing)
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: DATA-OUTBOX-001
+    severity: high
+    gate: data/outbox
+    観点: Outboxパターン (DB+MQ二重整合)
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: DATA-SOT-001
+    severity: high
+    gate: data/governance
+    観点: Single Source of Truth 宣言
+    cited_layer: layer-3-architecture/データ設計詳細.md
+
+  - id: ENV-DATAFLOW-001
+    severity: high
+    gate: env/dataflow
+    観点: 本番→ステージのデータ移送ルール
+    cited_layer: layer-3-architecture/環境分離_IaC.md
+
+  - id: NFR-OBS-001
+    severity: high
+    gate: nfr/observability
+    観点: log/metric/trace 三本柱 + 分散トレースID
+    cited_layer: layer-4-requirements/可観測性三本柱.md
+
+  - id: NFR-RTORPO-001
+    severity: high
+    gate: nfr/dr
+    観点: RTO/RPO + DR構成 + 演習頻度
+    cited_layer: layer-4-requirements/RTO_RPO_DR設計.md
+
+  - id: NFR-SLO-001
+    severity: high
+    gate: nfr/slo
+    観点: SLI/SLO/SLA + エラーバジェット
+    cited_layer: layer-4-requirements/SLI_SLO_エラーバジェット.md
+
+  - id: PERF-SCALE-001
+    severity: high
+    gate: perf/scaling
+    観点: 水平/垂直スケール戦略
+    cited_layer: layer-4-requirements/SMART非機能要件.md
+
+  - id: PERF-STATELESS-001
+    severity: high
+    gate: perf/stateless
+    観点: ステートレス設計
+    applies_when: Web系
+    cited_layer: layer-3-architecture/アーキスタイル選定.md
+
+  - id: SEC-CRYPTO-001
+    severity: high
+    gate: security/crypto
+    観点: 暗号化 (保存/転送時) + KMS + 鍵ローテーション
+    cited_layer: layer-5-risk/暗号化_KMS設計.md
+
+  - id: SEC-ZEROTRUST-001
+    severity: high
+    gate: security/zerotrust
+    観点: ゼロトラスト方針 + 内部例外撤廃
+    cited_layer: layer-5-risk/ゼロトラスト方針.md
+
+# ====================================================================
+# Cross-cutting Critical/High (15件: critical 10件 + high 5件)
+# ====================================================================
+
+cross_cutting_critical:
+  - id: COMPLY-PIPA-JP-001
+    severity: critical
+    gate: compliance/pipa
+    観点: 個情法対応マトリクス + 法務承認
+    cited_layer: layer-7-legal-compliance/個情法対応マトリクス.md
+
+  - id: COMPLY-GDPR-001
+    severity: critical
+    gate: compliance/gdpr
+    観点: GDPR対応 (越境含む)
+    applies_when: EU市民
+    cited_layer: layer-7-legal-compliance/越境データ移転書.md
+
+  - id: GOV-AI-DATAFLOW-001
+    severity: critical
+    gate: governance/aidata
+    観点: AIデータ境界ガイド + DLP + 教育
+    cited_layer:
+      - layer-8-llm-governance/PII境界_DLP.md
+      - layer-9-operations/AIデータ境界ガイド.md
+
+  - id: GOV-SHADOW-AI-001
+    severity: critical
+    gate: governance/shadow
+    観点: 未承認AI使用禁止
+    cited_layer: layer-9-operations/シャドーAI禁止ガバナンス.md
+
+  - id: LLM-AGENCY-001
+    severity: critical
+    gate: llm/agency
+    観点: エージェント権限境界書 + Human承認 + サンドボックス
+    cited_layer: layer-8-llm-governance/エージェント権限境界書.md
+
+  - id: LLM-INJECT-DIR-001
+    severity: critical
+    gate: llm/injection
+    観点: 直接プロンプトインジェクション評価セット
+    cited_layer: layer-8-llm-governance/プロンプトインジェクション評価.md
+
+  - id: LLM-INJECT-INDIR-001
+    severity: critical
+    gate: llm/injection
+    観点: 間接 (RAG/取込文書経由) インジェクション
+    cited_layer: layer-8-llm-governance/プロンプトインジェクション評価.md
+
+  - id: LLM-OUTPUT-TRUST-001
+    severity: critical
+    gate: llm/output
+    観点: LLM出力 (コード/SQL/コマンド) 検証層 + 許可リスト
+    cited_layer: layer-8-llm-governance/LLM出力検証_許可リスト.md
+
+  - id: LLM-PII-001
+    severity: critical
+    gate: llm/pii
+    観点: プロンプト内PII送信制御 + 学習オプトアウト
+    cited_layer: layer-8-llm-governance/PII境界_DLP.md
+
+  - id: LLM-TOOL-POISON-001
+    severity: critical
+    gate: llm/tool
+    観点: ツール汚染 (MCP含む)
+    applies_when: ツール連携あり
+    cited_layer: layer-8-llm-governance/エージェント権限境界書.md
+
+cross_cutting_high:
+  - id: COMPLY-RETAIN-001
+    severity: high
+    gate: compliance/retain
+    観点: データ保持期間ポリシー + 自動削除ジョブ + 法務承認
+    cited_layer: layer-7-legal-compliance/データ保持_削除戦略.md
+
+  - id: DOC-RUNBOOK-001
+    severity: high
+    gate: doc/runbook
+    観点: 運用対象別ランブック群 + 演習記録 + 3ヶ月以内最終更新
+    cited_layer: layer-9-operations/ランブック規約.md
+
+  - id: GOV-AUDIT-TRAIL-001
+    severity: high
+    gate: governance/audit
+    観点: 別ストレージ保管 + WORM/改ざん防止 + 定期レビュー
+    cited_layer: layer-9-operations/監査証跡設計.md
+
+  - id: GOV-INTERNAL-SYSTEM-001
+    severity: high
+    gate: governance/internal
+    観点: 横移動防止 + 内部システム例外撤廃
+    cited_layer: layer-5-risk/ゼロトラスト方針.md
+
+  - id: LLM-COST-RUNAWAY-001
+    severity: high
+    gate: llm/cost
+    観点: Provider上限 + ハードリミット + 月次予算アラート
+    cited_layer:
+      - layer-5-risk/リスクレジスタ.md
+      - layer-8-llm-governance/SKILL.md
+
+  - id: LLM-DRIFT-001
+    severity: high
+    gate: llm/drift
+    観点: モデル更新時の品質ドリフト検知
+    cited_layer: layer-8-llm-governance/モデルドリフト検知.md
+
+  - id: LLM-EVAL-REGR-001
+    severity: high
+    gate: llm/eval
+    観点: 評価セットによる回帰検知 + CI実行
+    cited_layer: layer-8-llm-governance/評価セット_回帰検知.md
+
+  - id: LLM-HALLUCIN-001
+    severity: high
+    gate: llm/hallucination
+    観点: ハルシネーション検知 + 引用必須化
+    cited_layer: layer-8-llm-governance/ハルシネーション対策.md
+
+  - id: LLM-LIB-HALLUCIN-001
+    severity: high
+    gate: llm/lib
+    観点: AIが提案する架空ライブラリの検証
+    applies_when: AIコード生成あり
+    cited_layer: layer-8-llm-governance/SKILL.md
+
+# ====================================================================
+# 集計
+# ====================================================================
+
+stats:
+  total: 49
+  by_phase:
+    p0: 10
+    p1: 24
+    cross_cutting: 15
+  by_severity:
+    critical: 20
+    high: 29
+  by_layer_coverage:
+    layer-1: 3
+    layer-2: 0  # 直接対応なし、前提検証材料
+    layer-3: 14
+    layer-4: 4
+    layer-5: 6
+    layer-6: 0  # WBS で間接対応
+    layer-7: 9
+    layer-8: 9
+    layer-9: 4

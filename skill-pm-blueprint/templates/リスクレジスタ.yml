@@ -1,0 +1,216 @@
+# リスクレジスタ
+# pm-blueprint Layer 5 の出力フォーマット
+# 各リスクに Kill基準を必ず設定する
+
+metadata:
+  project_name: "データ分析基盤構築"
+  version: "1.0"
+  last_updated: "2026-04-24"
+  owner: "PM"
+  review_frequency: "monthly"
+
+# ============================================================
+# 凡例
+# ============================================================
+# category: technical / people / external / legal / financial / schedule
+# probability: low / medium / high
+# impact: minor / severe / critical
+# status: open / mitigated / accepted / closed
+# ============================================================
+
+risks:
+  # ------------------------------------------------------------
+  # R001: データソース仕様変更
+  # ------------------------------------------------------------
+  - id: R001
+    title: "データソース側の仕様変更"
+    category: technical
+    probability: medium
+    impact: severe
+    description: |
+      POS、会員DB、EC 等のソースシステムが業務側の都合でスキーマ変更される。
+      事前通知のリードタイムが十分でないケースが想定される。
+    triggers:
+      - ソース系運用チームからのスキーマ変更連絡
+      - ETL パイプラインの NULL 率上昇
+      - ソース側マスタ更新スケジュールの変更
+    mitigations:
+      - スキーマ変更検知のモニタリング導入 (Bronze 層)
+      - ソース系運用チームとの月次同期会議
+      - Bronze 層でスキーマ変化を吸収する設計 (スキーマオンリード寄り)
+      - 影響範囲自動分析スクリプトの整備
+    owner: "データエンジニアリード"
+    status: open
+    kill_criterion: |
+      スキーマ変更が月 3 回以上発生 かつ
+      夜間バッチ成功率が 90% を下回った場合、
+      データソース再選定または取込方式の抜本見直しを検討する
+    warning_signs:
+      - Bronze 層取り込みエラー週次集計で 5% 超
+      - ソース系からの事前通知リードタイムが 2 週間未満
+      - ダッシュボードの「最新データ」警告が増加
+    linked_use_cases: [UC-003, UC-007]
+    linked_adrs: [ADR-0002]
+    linked_wbs_l4_tasks: [WBS-3.1.2, WBS-6.2.1]
+
+  # ------------------------------------------------------------
+  # R002: ベンダー API クォータ制限
+  # ------------------------------------------------------------
+  - id: R002
+    title: "ベンダー API クォータ制限"
+    category: external
+    probability: high
+    impact: severe
+    description: |
+      LLM API (Azure OpenAI) や SaaS API のクォータ制限に到達し、
+      処理が停止または遅延する。月末・月初のピーク時に発生しやすい。
+    triggers:
+      - 月次処理量の増加
+      - 急なユーザー利用増
+      - ベンダー側のレート制限変更
+    mitigations:
+      - クォータ使用率のモニタリングとアラート
+      - 月次クォータ予約交渉
+      - リトライロジックと指数バックオフ
+      - 優先度別キューイング
+    owner: "AIリード"
+    status: open
+    kill_criterion: |
+      月次クォータ到達が 3ヶ月連続で発生し、
+      業務影響が顕在化した場合、代替モデル/ベンダーへの切替を検討
+    warning_signs:
+      - クォータ使用率 80% 超 (月中旬時点)
+      - 429 (Too Many Requests) エラー増加
+    linked_use_cases: [UC-005]
+    linked_adrs: [ADR-0003]
+    linked_wbs_l4_tasks: [WBS-4.5.1, WBS-4.5.2]
+
+  # ------------------------------------------------------------
+  # R003: PII 漏洩
+  # ------------------------------------------------------------
+  - id: R003
+    title: "PII 漏洩"
+    category: legal
+    probability: low
+    impact: critical
+    description: |
+      顧客個人情報が意図せず外部に漏洩する。
+      経路: Gold 層の誤開示、BI の権限設定ミス、LLM 入力への混入、
+      バックアップメディア紛失、社員の誤送信 等。
+    triggers:
+      - セキュリティインシデント検知
+      - 内部監査での指摘
+      - ユーザーからの苦情・通報
+    mitigations:
+      - Row-level Security (RLS) の実装
+      - PII マスキング (Silver → Gold 間)
+      - 監査ログの常時取得
+      - LLM 入力の PII フィルタリング
+      - セキュリティ教育 (年 2 回)
+      - 定期的なペネトレーションテスト
+    owner: "セキュリティ責任者"
+    status: open
+    kill_criterion: |
+      PII 漏洩インシデントが発生した場合、
+      24 時間以内に該当パイプラインを停止し、根本対策完了までサービス再開しない
+    warning_signs:
+      - 監査ログ異常 (深夜の大量 SELECT 等)
+      - 権限変更申請の急増
+      - 退職予定者のアクセス急増
+    linked_use_cases: [UC-001, UC-003, UC-005]
+    linked_adrs: [ADR-0003, ADR-0005]
+    linked_wbs_l4_tasks: [WBS-3.2.1, WBS-4.3.2, WBS-5.1.3]
+
+  # ------------------------------------------------------------
+  # R004: 矢羽③データ連携 Sprint の遅延
+  # ------------------------------------------------------------
+  - id: R004
+    title: "矢羽③データ連携 Sprint の遅延"
+    category: schedule
+    probability: medium
+    impact: severe
+    description: |
+      矢羽③のデータ連携開発が遅延し、矢羽④ dbt 開発の着手が遅れる。
+      クリティカルパスのボトルネックとなる。
+    triggers:
+      - ソース系システムへの接続テスト遅延
+      - 業務部門との仕様調整難航
+      - チームのスキル不足
+    mitigations:
+      - Sprint 前に外部依存を洗い出し、前倒し調整
+      - モックデータでの並走開発
+      - 矢羽②PoC で連携方式を早期確定
+      - 追加人員の手配計画
+    owner: "PM"
+    status: open
+    kill_criterion: |
+      矢羽③の完了予定から 1ヶ月超の遅延が発生した場合、
+      スコープ縮小またはスケジュール再調整の経営判断を取得
+    warning_signs:
+      - Sprint 2 連続でベロシティ 70% 未満
+      - ブロッカー件数週次 3 件超
+    linked_use_cases: [UC-003, UC-007]
+    linked_adrs: []
+    linked_wbs_l4_tasks: [WBS-3.1.1, WBS-3.2.1, WBS-3.3.1]
+
+  # ------------------------------------------------------------
+  # R005: dbt 経験者の確保困難
+  # ------------------------------------------------------------
+  - id: R005
+    title: "dbt 経験者の確保困難"
+    category: people
+    probability: medium
+    impact: severe
+    description: |
+      dbt 経験のあるデータエンジニアの採用が市場で難しく、
+      計画通りの人員確保ができない。年収水準が予算と合わない場合も想定。
+    triggers:
+      - 採用市場の供給不足
+      - 想定年収と予算の乖離
+      - 内部育成のスキル不足
+    mitigations:
+      - 早期採用着手 (キックオフ前から)
+      - 外部パートナー (SIer, フリーランス) の並行採用
+      - 内部育成プログラム (dbt 研修)
+      - リテンション施策 (給与見直し、環境)
+    owner: "HR + PM"
+    status: open
+    kill_criterion: |
+      矢羽②開始時点で必要人員の 50% 未満しか確保できず、
+      3ヶ月以内の補充見込みが立たない場合、
+      スコープ縮小またはスケジュール延期を検討
+    warning_signs:
+      - 採用面接数 月 5 件未満
+      - オファー辞退率 60% 超
+      - 既存メンバのエンゲージメント低下
+    linked_use_cases: [UC-003, UC-007, UC-008]
+    linked_adrs: [ADR-0002]
+    linked_wbs_l4_tasks: [WBS-4.2.1, WBS-4.3.1]
+
+# ============================================================
+# Kill基準 サマリー (リスクレジスタの抜粋)
+# ============================================================
+
+kill_criteria_summary:
+  - id: R001
+    criterion: "スキーマ変更 月3回以上 & バッチ成功率 <90%"
+  - id: R002
+    criterion: "月次クォータ到達が3ヶ月連続"
+  - id: R003
+    criterion: "PII漏洩インシデント発生 → 24h以内に停止"
+  - id: R004
+    criterion: "矢羽③完了が予定から 1ヶ月超遅延"
+  - id: R005
+    criterion: "矢羽②開始時に必要人員の50%未満 & 3ヶ月以内補充不可"
+
+# ============================================================
+# レビュー履歴
+# ============================================================
+
+review_history:
+  - date: "2026-04-24"
+    reviewer: "PM"
+    changes: "初版作成"
+  - date: "[次回レビュー予定]"
+    reviewer: ""
+    changes: ""

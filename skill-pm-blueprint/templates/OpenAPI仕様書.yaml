@@ -1,0 +1,482 @@
+# OpenAPI 3.1 仕様書 (雛形)
+# ============================================================
+# 目的:
+#   API 仕様を OpenAPI 3.1 形式で記述し、Idempotency-Key、バージョニング、
+#   エラー応答スキーマを統一して、フロント/バックエンド/テスト/契約書の
+#   単一情報源 (Single Source of Truth) とする。
+#
+# 対応する品質評価ID:
+#   - API-IDEMPOTENCY-001 (Critical Fail) — Idempotency-Key 仕様の不在
+#
+# 参照 pm-blueprint レイヤー:
+#   - Layer 3 (System Design: API Layer)
+#   - Layer 4 (NFR: Reliability/Idempotency)
+# ============================================================
+
+openapi: 3.1.0
+
+info:
+  title: "[埋めてください 例: 顧客サービス基盤 API]"
+  description: |
+    [API の概要を記述]
+
+    ## 共通仕様
+
+    - **認証:** Bearer Token (Microsoft Entra ID)
+    - **冪等性:** 全 POST/PATCH/DELETE で Idempotency-Key ヘッダ必須
+    - **バージョニング:** URL パスバージョニング (/v1, /v2)
+    - **トレーシング:** W3C Trace Context (traceparent ヘッダ)
+    - **レート制限:** ロール別、Retry-After ヘッダで通知
+  version: "1.0.0"
+  contact:
+    name: "[API オーナー]"
+    email: "[email@example.com]"
+  license:
+    name: "Proprietary"
+
+servers:
+  - url: https://api.example.com/v1
+    description: 本番環境
+  - url: https://api-stg.example.com/v1
+    description: ステージング
+  - url: https://api-dev.example.com/v1
+    description: 開発
+
+tags:
+  - name: tickets
+    description: チケット管理 (コールセンター業界例)
+  - name: shipments
+    description: 配送管理 (物流業界例)
+  - name: voc
+    description: VoC 分析 (データ分析基盤例)
+
+# ============================================================
+# 共通: セキュリティ / パラメータ / レスポンス / スキーマ
+# ============================================================
+
+components:
+  # ----------------------------------------------------------
+  # セキュリティスキーム
+  # ----------------------------------------------------------
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: "Microsoft Entra ID から発行された JWT Access Token"
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: "M2M 通信用 API Key"
+
+  # ----------------------------------------------------------
+  # 共通ヘッダパラメータ
+  # ----------------------------------------------------------
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        冪等性キー。同一キー + 同一リクエストボディの再送信は同一結果を返す。
+        サーバ側で 24 時間保管。形式: UUIDv4 推奨。
+        Stripe API の慣行に準拠。
+      schema:
+        type: string
+        format: uuid
+        minLength: 36
+        maxLength: 100
+        example: "550e8400-e29b-41d4-a716-446655440000"
+
+    TraceParent:
+      name: traceparent
+      in: header
+      required: false
+      description: "W3C Trace Context"
+      schema:
+        type: string
+        pattern: '^00-[0-9a-f]{32}-[0-9a-f]{16}-[0-9a-f]{2}$'
+        example: "00-0af7651916cd43dd8448eb211c80319c-b7ad6b7169203331-01"
+
+    AcceptLanguage:
+      name: Accept-Language
+      in: header
+      required: false
+      schema:
+        type: string
+        example: "ja"
+
+    PageSize:
+      name: page_size
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 200
+        default: 20
+
+    PageToken:
+      name: page_token
+      in: query
+      required: false
+      description: "ページング用トークン (前回レスポンスの next_page_token)"
+      schema:
+        type: string
+
+  # ----------------------------------------------------------
+  # 共通レスポンス
+  # ----------------------------------------------------------
+  responses:
+    BadRequest:
+      description: "リクエスト不正"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: "VALIDATION_ERROR"
+              message: "subject is required"
+              details:
+                - field: "subject"
+                  reason: "missing required field"
+              trace_id: "0af7651916cd43dd8448eb211c80319c"
+
+    Unauthorized:
+      description: "認証失敗"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: "権限不足"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: "リソース未存在"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: "状態競合 / 冪等性キー競合"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: "レート制限超過"
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: "再試行までの秒数"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: "サーバ内部エラー"
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ----------------------------------------------------------
+  # 共通スキーマ
+  # ----------------------------------------------------------
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, trace_id]
+          properties:
+            code:
+              type: string
+              description: "エラーコード (機械可読)"
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: "エラーメッセージ (人間可読)"
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  reason:
+                    type: string
+            trace_id:
+              type: string
+              description: "W3C trace_id"
+
+    PageMeta:
+      type: object
+      properties:
+        next_page_token:
+          type: string
+          nullable: true
+        total_count:
+          type: integer
+          description: "総件数 (集計コスト高い場合は省略)"
+
+    # ------- ドメイン例: コールセンター - チケット
+    Ticket:
+      type: object
+      required: [ticket_id, subject, status, created_at]
+      properties:
+        ticket_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, resolved, closed]
+        priority:
+          type: string
+          enum: [P1, P2, P3, P4]
+        created_at:
+          type: string
+          format: date-time
+        contact_id:
+          type: string
+          format: uuid
+
+    TicketCreateRequest:
+      type: object
+      required: [subject, contact_id]
+      properties:
+        subject:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        priority:
+          type: string
+          enum: [P1, P2, P3, P4]
+          default: P3
+        contact_id:
+          type: string
+          format: uuid
+
+    # ------- ドメイン例: 物流 - 配送
+    Shipment:
+      type: object
+      required: [shipment_id, tracking_number, status]
+      properties:
+        shipment_id:
+          type: string
+          format: uuid
+        tracking_number:
+          type: string
+          example: "1234-5678-9012"
+        status:
+          type: string
+          enum: [created, in_transit, delivered, failed]
+        expected_delivery_at:
+          type: string
+          format: date-time
+        receiver:
+          type: object
+          properties:
+            name_masked:
+              type: string
+            address_masked:
+              type: string
+
+    # ------- ドメイン例: VoC - 分析依頼
+    VocAnalysisRequest:
+      type: object
+      required: [source_system, period_from, period_to]
+      properties:
+        source_system:
+          type: string
+          example: "genesys"
+        period_from:
+          type: string
+          format: date
+        period_to:
+          type: string
+          format: date
+        callback_url:
+          type: string
+          format: uri
+          description: "完了時のコールバック URL (任意)"
+
+    VocAnalysisResult:
+      type: object
+      required: [analysis_id, status]
+      properties:
+        analysis_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [accepted, processing, completed, failed]
+        result_url:
+          type: string
+          format: uri
+          nullable: true
+
+# ============================================================
+# 共通セキュリティ
+# ============================================================
+
+security:
+  - bearerAuth: []
+
+# ============================================================
+# エンドポイント
+# ============================================================
+
+paths:
+  # ----------------------------------------------------------
+  # ドメイン例: コールセンター - チケット
+  # ----------------------------------------------------------
+  /tickets:
+    get:
+      tags: [tickets]
+      summary: チケット一覧取得
+      operationId: listTickets
+      parameters:
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/PageToken'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [open, in_progress, resolved, closed]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ticket'
+                  meta:
+                    $ref: '#/components/schemas/PageMeta'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags: [tickets]
+      summary: チケット起票 (UC-005)
+      operationId: createTicket
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/TraceParent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+      responses:
+        '201':
+          description: 起票完了
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  # ----------------------------------------------------------
+  # ドメイン例: 物流 - 配送
+  # ----------------------------------------------------------
+  /shipments/{shipment_id}:
+    get:
+      tags: [shipments]
+      summary: 配送状況参照
+      operationId: getShipment
+      parameters:
+        - in: path
+          name: shipment_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ----------------------------------------------------------
+  # ドメイン例: VoC - 分析依頼
+  # ----------------------------------------------------------
+  /voc/analyses:
+    post:
+      tags: [voc]
+      summary: VoC 分析依頼 (UC-014, 非同期)
+      operationId: createVocAnalysis
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/TraceParent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VocAnalysisRequest'
+      responses:
+        '202':
+          description: 受付完了 (非同期)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VocAnalysisResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+# ============================================================
+# pm-blueprint 連携
+# ============================================================
+# 出力レイヤー: Layer 3 (API Layer Design)
+# 関連品質ゲート ID:
+#   - API-IDEMPOTENCY-001 (Critical) ... Idempotency-Key 仕様の存在
+#   - DATA-ENTITY-001 ... ERDとの整合
+#   - DATA-TX-001 ... Tx境界宣言との整合
+#   - SLO-API-001 ... SLO定義との整合 (応答時間)
+# ゲート通過条件:
+#   1. 全 POST/PATCH/DELETE エンドポイントに Idempotency-Key パラメータ
+#   2. 全エンドポイントに 4xx/5xx エラー応答の ErrorResponse スキーマ
+#   3. URL パスにバージョン (/v1, /v2) が含まれる
+#   4. traceparent (W3C Trace Context) を受け付ける
+# ============================================================

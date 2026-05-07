@@ -1,0 +1,229 @@
+# PII取扱台帳 (Personally Identifiable Information Register)
+# ============================================================
+# 目的:
+#   個人情報保護法 (個情法) 第26条 (取得時の利用目的明示) および
+#   第27条 (第三者提供) への準拠を満たすため、扱う個人情報項目を
+#   全件台帳化し、取得元・利用目的・保管期間・第三者提供・越境有無・
+#   法務承認状態を一元管理する。
+#
+# 対応する品質評価ID:
+#   - LEGAL-PII-001 (Critical Fail) — 個人情報取扱台帳の不在
+#
+# 参照 pm-blueprint レイヤー:
+#   - Layer 2: ステークホルダー / 業務制約 (法務・コンプラ部門)
+#   - Layer 4: 非機能要件 (Privacy / Compliance)
+#   - Layer 6: ガバナンス (情報資産管理)
+#
+# 運用ルール:
+#   - 新規 PII 項目を取り扱う場合は、必ず本台帳へ登録 → 法務承認 → 取得開始の順で運用する
+#   - 法務承認 (legal_approval.status: approved) なき項目を本番系で取得・利用してはならない
+#   - 棚卸 (review) を年 2 回 (4月/10月) 必須実施
+# ============================================================
+
+metadata:
+  document_name: "PII取扱台帳"
+  project_name: "[埋めてください 例: ABC社 次期顧客接点基盤構築]"
+  version: "1.0"
+  last_updated: "[YYYY-MM-DD]"
+  next_review_due: "[YYYY-MM-DD 年2回必須]"
+  document_owner: "法務部 / 個人情報保護管理者 (CPO)"
+  data_protection_officer: "[CPO/DPO 氏名]"
+  related_documents:
+    - "個情法対応マトリクス.yml"
+    - "データ分類台帳.yml"
+    - "プライバシーポリシー (公開ドキュメント)"
+
+# ============================================================
+# 凡例
+# ============================================================
+# data_category: basic / sensitive / special_care / pseudonymized / anonymized
+#   basic         = 氏名/連絡先等の通常の個人情報
+#   sensitive     = 要配慮個人情報 (個情法第2条第3項) 病歴・犯罪歴等
+#   special_care  = 特別な配慮を要する情報 (要配慮個人情報の社内分類)
+#   pseudonymized = 仮名加工情報 (個情法第41-42条)
+#   anonymized    = 匿名加工情報 (個情法第43-46条)
+# legal_basis: consent / contract / legal_obligation / legitimate_interest
+# cross_border: yes / no / pending_assessment
+# legal_approval.status: approved / pending / rejected / not_required
+# ============================================================
+
+pii_items:
+  # ------------------------------------------------------------
+  # 例1: コールセンター業界 — 顧客通話録音
+  # ------------------------------------------------------------
+  - id: PII-001
+    item_name: "顧客通話録音 (音声データ)"
+    data_category: basic
+    domain_example: "コールセンター業務 (月数百万件規模の問合せ)"
+    fields:
+      - 通話音声 (WAV/Opus)
+      - 顧客発話のテキスト書き起こし (STT 出力)
+      - 通話日時、発信元番号、オペレーター ID
+    source: "Genesys Cloud CX 録音機能"
+    acquisition_method: "通話開始時の自動録音 + IVR で同意確認音声"
+    legal_basis: consent
+    purpose: |
+      1. お問合せ対応品質の確認・改善
+      2. 教育・トレーニング教材の作成 (内部利用)
+      3. VoC 分析による業務改善
+    purpose_disclosed_at: "通話開始時の音声ガイダンス + 公式サイトのプライバシーポリシー"
+    retention_period: "5 年 (社内規定) / 法務省ガイドライン照合済"
+    storage_location: "Azure Blob Storage (Japan East / Japan West レプリケーション)"
+    access_controls:
+      - "Azure RBAC: 'CSAuditRole' のみ通話録音への読取権限"
+      - "RLS: オペレーター本人および直属マネジャーのみ閲覧可"
+      - "監査ログ常時取得 (Azure Monitor)"
+    third_party_provision:
+      provided: false
+      recipient: ""
+      purpose: ""
+      consent_obtained: ""
+    cross_border:
+      status: no
+      countries: []
+      transfer_mechanism: "国内保管 (Japan East/West) のみ"
+    legal_approval:
+      status: approved
+      approver: "[法務部長 氏名]"
+      approval_date: "[YYYY-MM-DD]"
+      reference_doc: "[承認番号 例: LGL-2026-001]"
+
+  # ------------------------------------------------------------
+  # 例2: 物流業界 — 配送先住所・氏名
+  # ------------------------------------------------------------
+  - id: PII-002
+    item_name: "配送先個人情報"
+    data_category: basic
+    domain_example: "宅配便配送業務"
+    fields:
+      - 受取人氏名
+      - 配送先住所 (郵便番号〜部屋番号)
+      - 受取人電話番号
+    source: "発送依頼者から提供"
+    acquisition_method: "送り状記入 / API 連携 / ECサイト連携"
+    legal_basis: contract
+    purpose: |
+      1. 配送業務の遂行
+      2. 配送通知 (SMS/メール)
+      3. 不在時の再配達調整
+    purpose_disclosed_at: "送り状裏面・受取人通知メール内のリンク"
+    retention_period: "配送完了から 3 年 (運送約款および会計帳簿保存法準拠)"
+    storage_location: "Azure SQL Database / Azure Blob (Japan East)"
+    access_controls:
+      - "RBAC: '配送オペレーション' ロールのみ"
+      - "PII マスキング (Silver→Gold 層)"
+    third_party_provision:
+      provided: true
+      recipient: "委託先運送業者 (個別契約締結済)"
+      purpose: "ラストワンマイル配送の業務委託"
+      consent_obtained: "規約同意 (送り状記入時)"
+    cross_border:
+      status: no
+      countries: []
+      transfer_mechanism: ""
+    legal_approval:
+      status: approved
+      approver: "[法務部長 氏名]"
+      approval_date: "[YYYY-MM-DD]"
+      reference_doc: "[承認番号]"
+
+  # ------------------------------------------------------------
+  # 例3: データ分析基盤 — 会員 ID と購買履歴
+  # ------------------------------------------------------------
+  - id: PII-003
+    item_name: "会員購買履歴データ (仮名化済)"
+    data_category: pseudonymized
+    domain_example: "データ分析基盤 (Databricks Gold層)"
+    fields:
+      - 仮名化会員 ID (元 ID をハッシュ化)
+      - 購買日時、商品 ID、金額
+    source: "POS / EC データ"
+    acquisition_method: "Bronze→Silver で仮名化 (SHA-256 + Salt)"
+    legal_basis: legitimate_interest
+    purpose: |
+      1. 購買パターン分析
+      2. 商品レコメンド
+      3. マーケティング施策 ROI 分析
+    purpose_disclosed_at: "プライバシーポリシー / 会員規約"
+    retention_period: "10 年 (分析用途)"
+    storage_location: "Azure Databricks Gold層 (Japan East)"
+    access_controls:
+      - "Unity Catalog のテーブル権限"
+      - "BIユーザは集計値のみ閲覧"
+    third_party_provision:
+      provided: false
+      recipient: ""
+      purpose: ""
+      consent_obtained: ""
+    cross_border:
+      status: no
+      countries: []
+      transfer_mechanism: ""
+    legal_approval:
+      status: approved
+      approver: "[CPO 氏名]"
+      approval_date: "[YYYY-MM-DD]"
+      reference_doc: "[承認番号]"
+
+  # ------------------------------------------------------------
+  # テンプレ: 新規 PII 項目登録時はこれをコピーして使用
+  # ------------------------------------------------------------
+  - id: PII-NNN
+    item_name: "[埋めてください]"
+    data_category: "[basic | sensitive | special_care | pseudonymized | anonymized]"
+    domain_example: "[埋めてください]"
+    fields:
+      - "[項目名 1]"
+      - "[項目名 2]"
+    source: "[取得元システム / 取得元組織]"
+    acquisition_method: "[API / フォーム入力 / 紙申請書 等]"
+    legal_basis: "[consent | contract | legal_obligation | legitimate_interest]"
+    purpose: |
+      [利用目的を漏れなく列挙。マーケ転用等を後付けしないこと]
+    purpose_disclosed_at: "[同意取得手段 / 開示場所]"
+    retention_period: "[年数 / 月数 + 根拠法令]"
+    storage_location: "[クラウドリージョン / オンプレ拠点]"
+    access_controls:
+      - "[RBAC / RLS / マスキング 等の制御]"
+    third_party_provision:
+      provided: false
+      recipient: ""
+      purpose: ""
+      consent_obtained: ""
+    cross_border:
+      status: "[yes | no | pending_assessment]"
+      countries: []
+      transfer_mechanism: "[標準契約条項 (SCC) / 同意 / 委託契約 等]"
+    legal_approval:
+      status: pending
+      approver: "[埋めてください]"
+      approval_date: "[YYYY-MM-DD]"
+      reference_doc: ""
+
+# ============================================================
+# 棚卸履歴 (年2回必須)
+# ============================================================
+
+review_history:
+  - date: "[YYYY-MM-DD]"
+    reviewer: "[CPO/DPO 氏名]"
+    changes: "初版作成 / 全 PII 項目登録"
+    findings: "[棚卸で見つかった是正点]"
+  - date: "[次回棚卸予定]"
+    reviewer: ""
+    changes: ""
+    findings: ""
+
+# ============================================================
+# pm-blueprint 連携
+# ============================================================
+# 出力レイヤー: Layer 4 (非機能要件: Privacy/Compliance) / Layer 6 (ガバナンス)
+# 関連品質ゲート ID:
+#   - LEGAL-PII-001 (Critical) ... 個人情報取扱台帳の存在性
+#   - COMPLY-PIPA-JP-001 (Critical) ... 個情法対応マトリクスとの整合
+#   - LEGAL-DATACLASS-001 (High) ... データ分類台帳との突合
+# ゲート通過条件:
+#   1. 全 PII 項目が登録されていること
+#   2. 各項目に法務承認 (approved) が紐付いていること
+#   3. 直近 6 ヶ月以内に棚卸履歴があること
+# ============================================================

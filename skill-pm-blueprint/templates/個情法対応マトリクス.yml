@@ -1,0 +1,317 @@
+# 個人情報保護法 (個情法) 対応マトリクス
+# ============================================================
+# 目的:
+#   個人情報保護法 第18条〜第31条の各義務条項について、
+#   自プロジェクトの対応状況・対応文書・対応責任者・対応期限を
+#   一覧化し、法令遵守の証跡を残す。
+#
+# 対応する品質評価ID:
+#   - COMPLY-PIPA-JP-001 (Critical Fail) — 個情法対応マトリクスの不在
+#
+# 参照 pm-blueprint レイヤー:
+#   - Layer 2: 業務制約 (法令)
+#   - Layer 4: 非機能要件 (Compliance)
+#   - Layer 6: ガバナンス
+#
+# 凡例:
+#   compliance_status: compliant / partial / non_compliant / not_applicable / pending
+#   priority: must / should / may
+# ============================================================
+
+metadata:
+  document_name: "個情法対応マトリクス"
+  project_name: "[埋めてください 例: ABC社 次期顧客接点基盤構築]"
+  version: "1.0"
+  applicable_law_version: "個人情報の保護に関する法律 (令和2年改正・令和5年改正反映)"
+  last_updated: "[YYYY-MM-DD]"
+  document_owner: "個人情報保護管理者 (CPO)"
+  legal_advisor: "[顧問弁護士 / 法律事務所名]"
+  next_review_due: "[YYYY-MM-DD 年1回 + 法改正時]"
+
+# ============================================================
+# 個情法 対応条項マトリクス (主要条項)
+# ============================================================
+
+requirements:
+  # ------------------------------------------------------------
+  - id: PIPA-17
+    article: "第17条 (利用目的の特定)"
+    requirement: |
+      個人情報を取扱うにあたり、利用目的をできる限り特定すること
+    priority: must
+    compliance_status: "[compliant | partial | non_compliant | pending]"
+    domain_example: "コールセンター: 通話録音の利用目的を 3 区分 (応対品質確認/教育/業務改善) に特定済"
+    evidence_documents:
+      - "プライバシーポリシー (公開URL)"
+      - "PII取扱台帳.yml の purpose 欄"
+    responsible_party: "[CPO 氏名]"
+    deadline: "[YYYY-MM-DD]"
+    notes: "[現状の対応状況を記述]"
+
+  # ------------------------------------------------------------
+  - id: PIPA-18
+    article: "第18条 (利用目的による制限)"
+    requirement: |
+      特定された利用目的の達成に必要な範囲を超えて取扱ってはならない
+    priority: must
+    compliance_status: pending
+    domain_example: "物流業: 配送業務取得の住所をマーケに転用しないことを契約書で明示"
+    evidence_documents:
+      - "データガバナンス規程"
+      - "目的外利用検知の監査ログ"
+    responsible_party: "[CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: "[埋めてください]"
+
+  # ------------------------------------------------------------
+  - id: PIPA-19
+    article: "第19条 (不適正利用の禁止)"
+    requirement: |
+      違法・不当な行為を助長・誘発するおそれのある方法で利用してはならない
+    priority: must
+    compliance_status: pending
+    domain_example: "AIスコアリングで差別的な判定を行わない設計レビューを必須化"
+    evidence_documents:
+      - "AI倫理ガイドライン"
+      - "AI生成物著作権ポリシー.md"
+    responsible_party: "[AIガバナンス委員会]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-20
+    article: "第20条 (適正な取得 / 要配慮個人情報の取扱い)"
+    requirement: |
+      偽りその他不正な手段により取得しない。要配慮個人情報は事前同意必須
+    priority: must
+    compliance_status: pending
+    domain_example: "コールセンター: 体調不良の発話を録音する場合は要配慮個人情報扱いとして取得方針を明示"
+    evidence_documents:
+      - "PII取扱台帳.yml の sensitive 区分"
+    responsible_party: "[CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-21
+    article: "第21条 (取得に際しての利用目的の通知)"
+    requirement: |
+      個人情報取得時に利用目的を通知または公表すること
+    priority: must
+    compliance_status: pending
+    domain_example: "通話開始の音声ガイダンスで通知 + 公式サイトに掲載"
+    evidence_documents:
+      - "IVR ガイダンス文言テキスト"
+      - "プライバシーポリシー"
+    responsible_party: "[業務部門長]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-22
+    article: "第22条 (データ内容の正確性確保)"
+    requirement: |
+      利用目的の達成に必要な範囲内で個人データを正確かつ最新に保つよう努める
+    priority: should
+    compliance_status: pending
+    domain_example: "データ分析基盤: Bronze→Silver で名寄せロジック実装"
+    evidence_documents:
+      - "ETL 仕様書 (名寄せ部分)"
+    responsible_party: "[データエンジニアリード]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-23
+    article: "第23条 (安全管理措置)"
+    requirement: |
+      漏えい、滅失、毀損の防止その他必要かつ適切な安全管理措置を講じること
+    priority: must
+    compliance_status: pending
+    domain_example: "Azure 暗号化 (AES-256), Key Vault による鍵管理, RBAC, 監査ログ"
+    evidence_documents:
+      - "セキュリティ設計書"
+      - "可観測性方針.md"
+      - "DR設計書.md"
+    responsible_party: "[セキュリティ責任者]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-24
+    article: "第24条 (従業者の監督)"
+    requirement: |
+      従業者に対し必要かつ適切な監督を行うこと
+    priority: must
+    compliance_status: pending
+    domain_example: "年 2 回のセキュリティ教育、ロールベース研修、退職者アクセス即時停止"
+    evidence_documents:
+      - "年次教育記録"
+      - "退職者処理SOP"
+    responsible_party: "[人事部長 + CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-25
+    article: "第25条 (委託先の監督)"
+    requirement: |
+      個人データの取扱を委託する場合、委託先に対し必要かつ適切な監督を行うこと
+    priority: must
+    compliance_status: pending
+    domain_example: "物流: ラストワンマイル委託先運送業者の年次監査、契約書での再委託禁止"
+    evidence_documents:
+      - "業務委託契約書 (個人情報取扱条項)"
+      - "委託先年次監査記録"
+    responsible_party: "[調達部 + CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-26
+    article: "第26条 (漏えい等の報告等)"
+    requirement: |
+      漏えい等が発生した場合、個人情報保護委員会への報告および本人への通知
+    priority: must
+    compliance_status: pending
+    domain_example: "インシデント検知 → 24時間以内に CPO エスカレ → 速報 (3-5日) + 確報 (30/60日)"
+    evidence_documents:
+      - "インシデント対応SOP"
+      - "ランブック規約.md"
+    responsible_party: "[CPO + セキュリティ責任者]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-27
+    article: "第27条 (第三者提供の制限)"
+    requirement: |
+      原則として本人同意なき第三者提供は禁止。例外規定あり
+    priority: must
+    compliance_status: pending
+    domain_example: "PII取扱台帳の third_party_provision 欄で全件追跡"
+    evidence_documents:
+      - "PII取扱台帳.yml"
+    responsible_party: "[CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-28
+    article: "第28条 (外国にある第三者への提供の制限)"
+    requirement: |
+      外国にある第三者への提供は本人同意 + 提供先の体制整備等の情報提供必要
+    priority: must
+    compliance_status: pending
+    domain_example: "コールセンター: 録音データを国内のみ保管 (越境ゼロ) → 適用回避"
+    evidence_documents:
+      - "PII取扱台帳.yml の cross_border 欄"
+      - "リージョン構成図"
+    responsible_party: "[CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-29
+    article: "第29条 (第三者提供に係る記録の作成等)"
+    requirement: |
+      第三者提供を行う場合、記録の作成・保存 (3 年)
+    priority: must
+    compliance_status: pending
+    domain_example: "提供記録テーブルを設けて自動記録"
+    evidence_documents:
+      - "第三者提供記録テーブル仕様"
+    responsible_party: "[CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-30
+    article: "第30条 (第三者提供を受ける際の確認等)"
+    requirement: |
+      第三者から提供を受ける際の取得経緯確認・記録"
+    priority: must
+    compliance_status: pending
+    domain_example: "ECデータ受領時の取得経緯記録"
+    evidence_documents:
+      - "受領記録テーブル仕様"
+    responsible_party: "[CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+  # ------------------------------------------------------------
+  - id: PIPA-31
+    article: "第31条 (個人関連情報の第三者提供の制限等)"
+    requirement: |
+      Cookie 等の個人関連情報を第三者が個人データとして取得することを想定する場合の同意確認
+    priority: must
+    compliance_status: pending
+    domain_example: "ウェブ計測タグの利用同意 (Cookie バナー)"
+    evidence_documents:
+      - "Cookie 同意管理 (CMP) 設計書"
+    responsible_party: "[マーケ部 + CPO]"
+    deadline: "[YYYY-MM-DD]"
+    notes: ""
+
+# ============================================================
+# 開示・訂正・利用停止請求対応 (第33-39条)
+# ============================================================
+
+data_subject_rights:
+  - right: "保有個人データの開示請求 (第33条)"
+    process_documented: false
+    sla_days: 30
+    contact_point: "[個人情報問合せ窓口メールアドレス]"
+  - right: "訂正・追加・削除請求 (第34条)"
+    process_documented: false
+    sla_days: 30
+    contact_point: "[同上]"
+  - right: "利用停止・消去請求 (第35条)"
+    process_documented: false
+    sla_days: 30
+    contact_point: "[同上]"
+  - right: "第三者提供停止請求 (第35条第3項)"
+    process_documented: false
+    sla_days: 30
+    contact_point: "[同上]"
+
+# ============================================================
+# 是正アクションプラン
+# ============================================================
+
+action_plan:
+  - id: ACT-001
+    related_requirement: PIPA-23
+    action: "[例: KMS設計書を 2026-06-30 までに作成]"
+    owner: "[セキュリティ責任者]"
+    deadline: "[YYYY-MM-DD]"
+    status: open
+  - id: ACT-NNN
+    related_requirement: ""
+    action: "[埋めてください]"
+    owner: "[埋めてください]"
+    deadline: "[YYYY-MM-DD]"
+    status: open
+
+# ============================================================
+# 法務承認
+# ============================================================
+
+legal_approval:
+  reviewer: "[顧問弁護士 氏名 / 所属]"
+  approval_date: "[YYYY-MM-DD]"
+  signature_reference: "[承認番号]"
+  next_review: "[YYYY-MM-DD 年1回 + 法改正時]"
+
+# ============================================================
+# pm-blueprint 連携
+# ============================================================
+# 出力レイヤー: Layer 4 (Compliance) / Layer 6 (Governance)
+# 関連品質ゲート ID:
+#   - COMPLY-PIPA-JP-001 (Critical) ... 本マトリクスの存在
+#   - LEGAL-PII-001 (Critical) ... PII取扱台帳との整合
+# ゲート通過条件:
+#   1. 第17-31条の全条項について compliance_status が pending 以外
+#   2. 顧問弁護士の承認 (legal_approval) が直近 12 ヶ月以内
+#   3. 是正アクションが期限内で進行中
+# ============================================================

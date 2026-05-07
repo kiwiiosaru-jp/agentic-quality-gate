@@ -1,0 +1,39 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python（将来の VoC デモなどで使う場合）
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.python-version
+
+# Node（将来の Skill 開発などで使う場合）
+node_modules/
+npm-debug.log*
+
+# Excel 一時ファイル
+~$*.xlsx
+~$*.xls
+
+# Claude Code 個人セッション
+.claude/sessions/
+.claude/cache/
+
+# 配布前のローカル作業物
+*.bak
+*.bak.*
+.DRAFT
