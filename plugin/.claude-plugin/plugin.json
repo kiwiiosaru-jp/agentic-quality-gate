@@ -1,0 +1,8 @@
+{
+  "name": "agentic-quality-gate",
+  "version": "0.1.0",
+  "description": "外部環境変化に追随する生きた品質仕様 — Claude Code 駆動のエージェンティック品質ゲート",
+  "author": "Datum Studio (Abe)",
+  "homepage": "",
+  "claude_code_min_version": "1.0.0"
+}

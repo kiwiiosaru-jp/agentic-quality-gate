@@ -5,7 +5,7 @@
 metadata:
   version: "4.0-pm-blueprint-2026-04-30"
   total_entries: 49
-  source: "/Users/shigeru.abe/agentic-quality-gate/reports/2026-04-30_blueprint_review.md"
+  source: "agentic-quality-gate plugin の品質評価ナレッジ（v4）"
 
 # ====================================================================
 # P0 Critical (10件中 critical 3件 + high 7件)
