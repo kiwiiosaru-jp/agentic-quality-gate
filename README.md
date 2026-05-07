@@ -14,9 +14,9 @@ Andrej Karpathy 氏が 2026 年 4 月の Sequoia AI Ascent で再定義した **
 
 | ディレクトリ | 内容 | 状態 |
 |---|---|---|
-| [`plugin/`](plugin/) | **Claude Code Plugin** ── 8 Subagent / 6 Skill / 6 Slash Command / 137 ナレッジエントリ + Excel ドライバ (`master.xlsx`) | 🚧 Phase B で内容投入予定 |
-| [`skill-pm-blueprint/`](skill-pm-blueprint/) | **pm-blueprint Skill** ── プロジェクト計画書を 9 レイヤ（Executive / Hypothesis / Architecture / Requirements / Risk / Execution / Legal-Compliance / LLM-Governance / Operations）で自律生成するスキル | 🟡 Phase B 公開準備中 |
-| [`docs/`](docs/) | **アーキテクチャ・QuickStart 等** ── 全体図、6 週間 MVP の進め方 | 🚧 Phase B で内容投入予定 |
+| [`plugin/`](plugin/) | **Claude Code Plugin** ── 8 Subagent / 6 Skill / 6 Slash Command / 176 件のナレッジ + Excel ドライバ (`master.xlsx`) | ✅ **公開済み**（Claude Security の本実装は後続リリース） |
+| [`skill-pm-blueprint/`](skill-pm-blueprint/) | **pm-blueprint Skill** ── プロジェクト計画書を 9 レイヤ（Executive / Hypothesis / Architecture / Requirements / Risk / Execution / Legal-Compliance / LLM-Governance / Operations）で自律生成するスキル | ✅ **公開済み** |
+| [`docs/`](docs/) | **アーキテクチャ・QuickStart 等** ── 全体図、6 週間 MVP の進め方 | 🟡 概要のみ公開、詳細は順次追加 |
 
 > Phase A の現時点では、**README とライセンスのみ**を公開しています。Phase B で各サブディレクトリの中身を順次充填します。
 

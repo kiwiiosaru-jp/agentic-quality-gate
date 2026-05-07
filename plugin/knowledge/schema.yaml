@@ -1,0 +1,90 @@
+version: '1.0'
+fields:
+  id:
+    type: string
+    required: true
+    pattern: ^[A-Z]+(-[A-Z0-9]+)+$
+  title:
+    type: string
+    required: true
+  phase:
+    type: array
+    required: true
+    values:
+    - P0
+    - P1
+    - P2
+    - P3
+    - P4
+    - P5
+    - P6
+    - cross-cutting
+  gate:
+    type: string
+    required: true
+    format: domain/subdomain
+  severity:
+    type: string
+    required: true
+    values:
+    - critical
+    - high
+    - medium
+    - low
+  priority:
+    type: string
+    required: true
+    values:
+    - Must
+    - Should
+    - Could
+  judge:
+    type: string
+    required: true
+    values:
+    - AI
+    - Both
+  automation_origin:
+    type: string
+    values:
+    - Static
+    - Dynamic
+    - LLM
+    - Human
+  source:
+    type: string
+    values:
+    - article
+    - added
+    - incident
+  status:
+    type: string
+    values:
+    - active
+    - draft
+    - deprecated
+    - superseded
+  last_validated:
+    type: date
+    format: YYYY-MM-DD
+  review_frequency:
+    type: string
+    values:
+    - daily
+    - weekly
+    - monthly
+    - quarterly
+    - yearly
+    - on-change
+  applies_when:
+    type: string
+body_sections:
+- '## 観点・確認内容'
+- '## 適用条件'
+- '## OK基準'
+- '## NG基準'
+- '## 必要証跡'
+- '## AI自律確認の手順'
+- '## Humanレビュー観点'
+- '## 陳腐化判定基準'
+- '## 関連ナレッジ'

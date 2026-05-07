@@ -1,0 +1,104 @@
+{
+  "scan_metadata": {
+    "evaluated_at": "2026-05-01T13:00:00+09:00",
+    "tool": "claude-security",
+    "tool_version": "0.1.0-beta",
+    "model": "claude-opus-4-7-mythos",
+    "scope": "github.com/example-org/example-poc",
+    "branch": "main",
+    "commit": "1156eb3"
+  },
+  "evaluation_summary": {
+    "total_findings": 6,
+    "high": 3,
+    "medium": 2,
+    "low": 1,
+    "dismissed": 0
+  },
+  "results": [
+    {
+      "claude_security_finding_id": "CS-2026-05-01-001",
+      "category": "SQL injection",
+      "severity": "HIGH",
+      "repo": "github.com/example-org/example-poc",
+      "file": "5_AI_Insights.py",
+      "line_start": 39,
+      "line_end": 44,
+      "description": "User-supplied transcript variable is concatenated into SQL via string interpolation '{var}'. This allows arbitrary SQL execution from VoC text content.",
+      "patch_suggestion": "Use parameterized query with bind variables instead of f-string interpolation.",
+      "patch_available": true,
+      "patch_link": "https://claude.ai/security/findings/CS-2026-05-01-001/patch",
+      "confidence": 0.94
+    },
+    {
+      "claude_security_finding_id": "CS-2026-05-01-002",
+      "category": "Access control issues",
+      "severity": "HIGH",
+      "repo": "github.com/example-org/example-poc",
+      "file": "streamlit/voc_dashboard.py",
+      "line_start": 12,
+      "line_end": 28,
+      "description": "Streamlit application has no authentication layer. All pages are accessible to anyone with the URL. Critical IDOR-type vulnerability.",
+      "patch_suggestion": "Add streamlit-authenticator middleware or Azure AD integration before page rendering.",
+      "patch_available": true,
+      "patch_link": "https://claude.ai/security/findings/CS-2026-05-01-002/patch",
+      "confidence": 0.98
+    },
+    {
+      "claude_security_finding_id": "CS-2026-05-01-003",
+      "category": "Code injection",
+      "severity": "HIGH",
+      "repo": "github.com/example-org/example-poc",
+      "file": "streamlit/4_Text2SQL_Genie.py",
+      "line_start": 1198,
+      "line_end": 1213,
+      "description": "LLM-generated SQL is passed directly to run_query() without validation or sandboxing. Allows arbitrary SQL execution via prompt injection.",
+      "patch_suggestion": "Wrap run_query() with allowlist of permitted operations (SELECT only) and parsed AST verification.",
+      "patch_available": true,
+      "patch_link": "https://claude.ai/security/findings/CS-2026-05-01-003/patch",
+      "confidence": 0.92
+    },
+    {
+      "claude_security_finding_id": "CS-2026-05-01-004",
+      "category": "Cryptographic weaknesses",
+      "severity": "MEDIUM",
+      "repo": "github.com/example-org/example-poc",
+      "file": "streamlit/db_connection.py",
+      "line_start": 35,
+      "line_end": 54,
+      "description": "Connection uses shared PAT token from environment variable. No token rotation, no per-user token. Token leakage compromises all data.",
+      "patch_suggestion": "Switch to OAuth2 device flow with per-user tokens and 1-hour expiration.",
+      "patch_available": true,
+      "patch_link": "https://claude.ai/security/findings/CS-2026-05-01-004/patch",
+      "confidence": 0.85
+    },
+    {
+      "claude_security_finding_id": "CS-2026-05-01-005",
+      "category": "SSRF",
+      "severity": "MEDIUM",
+      "repo": "github.com/example-org/example-poc",
+      "file": "streamlit/logistics_agent.py",
+      "line_start": 89,
+      "line_end": 102,
+      "description": "External HTTP calls accept user-supplied URL. No allowlist or IMDS metadata blocking. Possible SSRF to internal services.",
+      "patch_suggestion": "Add URL validator with allowlist of permitted domains. Block 169.254.169.254 (AWS IMDS) explicitly.",
+      "patch_available": true,
+      "patch_link": "https://claude.ai/security/findings/CS-2026-05-01-005/patch",
+      "confidence": 0.78
+    },
+    {
+      "claude_security_finding_id": "CS-2026-05-01-006",
+      "category": "Path traversal",
+      "severity": "LOW",
+      "repo": "github.com/example-org/example-poc",
+      "file": "streamlit/2_VoC_詳細分析.py",
+      "line_start": 68,
+      "line_end": 82,
+      "description": "User-supplied filename used in file path without sanitization. Limited impact due to read-only context but could expose internal paths.",
+      "patch_suggestion": "Use os.path.basename() and validate against allowlist of allowed filenames.",
+      "patch_available": true,
+      "patch_link": "https://claude.ai/security/findings/CS-2026-05-01-006/patch",
+      "confidence": 0.65
+    }
+  ]
+}
