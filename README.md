@@ -129,6 +129,18 @@ git clone https://github.com/kiwiiosaru-jp/agentic-quality-gate.git ~/.claude/pl
 
 **RFP / 要件概要から、プロジェクト計画書一式を 9 レイヤーで自律生成する Claude Code Skill** です。
 
+#### 一番シンプルな使い方
+
+> **任意のフォルダに RFP（提案依頼書）や要件概要のテキストを置き、Claude Code に自然言語で「この RFP からプロジェクト計画書一式を作って」と指示するだけ** ── あとは Skill が次を全部やります：
+>
+> 1. **RFP / 要件概要を読み解いて、不足情報を仮説で補う**（前提抽出 / ディスカバリー、未確定事項には `[仮定]` タグを付与）
+> 2. **アーキテクチャ判断（ADR）・データ設計・API 設計を起こす**
+> 3. **機能要件（ユースケース）・非機能要件（SMART-NFR・EARS 形式）を整理**
+> 4. **リスク洗い出しと Kill 基準を設定**（事前検死・リスクレジスタ・脅威モデリング）
+> 5. **法務・コンプライアンス対応 / LLM ガバナンス / 運用設計まで網羅**
+> 6. **投資判断（Go/No-Go）と矢羽パターンの WBS を生成**
+> 7. **最終的に 12 セクション以上のプロジェクト計画書一式を Markdown で出力**（経営判断資料・アーキ図・要件・リスク・WBS・トレーサビリティマトリクスまで）
+
 #### インストール
 
 ```bash
@@ -137,25 +149,37 @@ ln -s "$(pwd)/agentic-quality-gate/skill-pm-blueprint" ~/.claude/skills/pm-bluep
 # Claude Code を再起動
 ```
 
-#### 基本フロー
+#### 実行例
 
-1. プロジェクトの **RFP / 要件概要** を用意
-2. Claude Code で「`pm-blueprint` を使って [RFP 概要] から計画書を作って」と依頼
-3. `skill-pm-blueprint/custom/統合オーケストレーター.md` が自動起動
-4. 以下のステップが順次実行される（推奨フロー）:
-   - **Step 1**: Layer 2 ディスカバリー
-   - **Step 2**: Layer 2 前提抽出
-   - **Step 3**: Layer 3 ADR 作成 + データ設計詳細
-   - **Step 4**: Layer 4 ユースケース + SMART-NFR + EARS
-   - **Step 5**: Layer 5 事前検死 + リスクレジスタ + 脅威モデリング
-   - **Step 6**: Layer 7 法務・コンプライアンス対応
-   - **Step 7**: Layer 8 LLM ガバナンス
-   - **Step 8**: Layer 9 運用設計
-   - **Step 9**: Layer 1 意思決定テンプレート
-   - **Step 10**: Layer 6 WBS テンプレート + トレーサビリティ
-5. 最終的に **12 セクション以上のプロジェクト計画書一式** が生成されます
+```bash
+# 一番シンプル
+「pm-blueprint を使って ~/projects/my-rfp/RFP.md から計画書を作って」
 
-詳細：[`skill-pm-blueprint/README.md`](skill-pm-blueprint/README.md) ／ [`skill-pm-blueprint/examples/サンプル適用例.md`](skill-pm-blueprint/examples/サンプル適用例.md)
+# 既存フォルダ全体を読ませる
+「pm-blueprint を使って ~/projects/my-project/ にある RFP と要件メモから計画書一式を作って」
+
+# 特定レイヤーだけ生成したい場合
+「pm-blueprint の Layer 5（リスク）だけで、リスクレジスタを作って」
+```
+
+実行すると、`skill-pm-blueprint/custom/統合オーケストレーター.md` が自動起動し、以下の **10 ステップ** が順次実行されます。
+
+#### 内部の詳細フロー（10 ステップ）
+
+| Step | レイヤー | 中身 |
+|---:|---|---|
+| 1 | Layer 2 | ディスカバリー（JTBD・ステークホルダー・OST 優先解決策） |
+| 2 | Layer 2 | 前提抽出（4 軸前提分析 V/U/Vi/F、不確実性マトリクス、検証計画） |
+| 3 | Layer 3 | ADR 作成 + データ設計詳細（C4 図、コンテキストマップ） |
+| 4 | Layer 4 | ユースケース + SMART-NFR + EARS（FURPS+ ランディングゾーン） |
+| 5 | Layer 5 | 事前検死 + リスクレジスタ + 脅威モデリング（STRIDE / LINDDUN） |
+| 6 | Layer 7 | 法務・コンプライアンス対応（個情法対応マトリクス・業法該当性判定書 等） |
+| 7 | Layer 8 | LLM ガバナンス（PII 境界 / 出力検証 / エージェント権限境界書 等） |
+| 8 | Layer 9 | 運用設計（AI データ境界 / シャドー AI 禁止 / ランブック規約） |
+| 9 | Layer 1 | 意思決定テンプレート（Go/No-Go 判断資料、シナリオ別期待値） |
+| 10 | Layer 6 | WBS テンプレート + トレーサビリティマトリクス（矢羽 L2/L3/L4） |
+
+詳細：[`skill-pm-blueprint/README.md`](skill-pm-blueprint/README.md) ／ 架空企業での適用例：[`skill-pm-blueprint/examples/サンプル適用例.md`](skill-pm-blueprint/examples/サンプル適用例.md)
 
 ---
 
