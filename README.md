@@ -48,6 +48,35 @@ Andrej Karpathy 氏が 2026 年 4 月の Sequoia AI Ascent で再定義した **
 
 ---
 
+## 使い方
+
+### 基本フロー
+
+1. プロジェクトの **RFP / 要件概要** を用意
+2. Claude Code で「`pm-blueprint` を使って [RFP 概要] から計画書を作って」と依頼
+3. `skill-pm-blueprint/custom/統合オーケストレーター.md` が自動起動
+4. 以下のステップが順次実行される（推奨フロー）:
+   - **Step 1**: Layer 2 ディスカバリー
+   - **Step 2**: Layer 2 前提抽出
+   - **Step 3**: Layer 3 ADR 作成 + データ設計詳細
+   - **Step 4**: Layer 4 ユースケース + SMART-NFR + EARS
+   - **Step 5**: Layer 5 事前検死 + リスクレジスタ + 脅威モデリング
+   - **Step 6**: Layer 7 法務・コンプライアンス対応
+   - **Step 7**: Layer 8 LLM ガバナンス
+   - **Step 8**: Layer 9 運用設計
+   - **Step 9**: Layer 1 意思決定テンプレート
+   - **Step 10**: Layer 6 WBS テンプレート + トレーサビリティ
+5. 最終的に **12 セクション以上のプロジェクト計画書一式** が生成されます
+6. 生成された計画書類を **`agentic-quality-gate` Plugin で評価** し、致命的問題 / 条件付合格 / 合格 を判定（[`plugin/`](plugin/) 参照）
+
+詳細：[`skill-pm-blueprint/examples/サンプル適用例.md`](skill-pm-blueprint/examples/サンプル適用例.md)
+
+### Plugin（agentic-quality-gate）単独利用
+
+Plugin 単体で「既存プロジェクトの品質評価」「外部変化サーチ」「インシデント記録」「内省サイクル」「チェックリスト出力」を行う場合は、[`plugin/README.md`](plugin/README.md) のスラッシュコマンド（`/aqg:evaluate`, `/aqg:sense`, `/aqg:incident`, `/aqg:reflect`, `/aqg:checklist` など）を参照してください。
+
+---
+
 ## 6 週間 MVP（推奨ロードマップ）
 
 ```
