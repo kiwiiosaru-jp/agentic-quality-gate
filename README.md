@@ -114,6 +114,43 @@ git clone https://github.com/kiwiiosaru-jp/agentic-quality-gate.git ~/.claude/pl
 | `/aqg:checklist --phase=p2 --severity=critical,high` | **人間レビュー用チェックリスト出力**（フェーズ × 重大度で絞込） |
 | `/aqg:claude-security` | **Claude Security 連携（スケルトン）** ── 後続リリースで本実装 |
 
+#### ナレッジは Excel が起点 ── 人間も AI も同じソースを見る
+
+品質ゲートの判定基準は **Excel ファイル `plugin/knowledge/master.xlsx`（176 件のチェックリスト）** が単一ソース（Single Source of Truth）です。**Excel と Markdown を二段運用** することで、人間と AI の双方が同じ判定基準を共有します。
+
+```
+plugin/knowledge/master.xlsx  ← 編集元（人間が読む / 編集する）
+        │
+        │ scripts/excel_to_md.py で自動変換
+        ▼
+plugin/knowledge/phases/{P0..P6}/*.md  ← AI が読む（status=active のみ）
+plugin/knowledge/cross-cutting/{...}/*.md
+```
+
+##### 人間（PM・レビュアー・QA）の操作
+
+- `master.xlsx` を **Excel / Numbers で開いて閲覧・編集**できます
+- 各チェック項目（観点・OK 基準・NG 基準・必要証跡・判定者 等）を **誰でも読んで内容を理解**できる粒度で記述
+- 必要に応じて **チェック項目の追加 / 削除 / 修正は Excel 側で人間が直接実施可能**（行を追加 → status=active にすれば AI も即読む）
+- `scripts/excel_to_md.py` を実行すれば、Excel → Markdown が再生成され、AI 側のナレッジに即反映
+
+##### AI エージェント側の動き
+
+- AI は **派生された Markdown ファイル群**（`knowledge/phases/`, `knowledge/cross-cutting/`）を読み込んで判定
+- 評価・サーチを実行するたびに、**AI が自律的に新しいチェック観点候補を `master.xlsx` の `candidates` シートに追加**（外部 CVE / 規制改正 / 業界事例 / 自社インシデント等から）
+- 人間が `candidates` シートで採用判断（`status=promoted`）すると、`Checklist` シートに昇格 → Markdown が再派生
+
+##### つまり「ナレッジが自分で太っていく」
+
+| Step | 主体 | 行為 |
+|---|---|---|
+| 1 | AI（自律） | 評価実行のたびに、外部変化や自社インシデントから候補ナレッジを `candidates` シートに自動追加 |
+| 2 | 人間 | Excel を開いて `candidates` シートを確認、採用 / 却下を判断 |
+| 3 | 人間 | 必要なら手動でチェック観点を追加・修正（Excel 直接編集） |
+| 4 | スクリプト | `excel_to_md.py` 実行で Markdown 再派生 → AI 即反映 |
+
+これにより、**AI による自動充実 × 人間による最終承認** の両輪で、チェックリストが陳腐化せず常に最新化されていきます。
+
 #### 進化メカニズム
 
 - **Reactive**：評価実行 or `/aqg:sense` 起動時に外部変化を取込み → `master.xlsx` の `candidates` シートに候補追加 → 人間レビュー → 採用なら Checklist 昇格 → MD 再生成
