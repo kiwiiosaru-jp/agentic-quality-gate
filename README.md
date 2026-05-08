@@ -71,6 +71,16 @@ Andrej Karpathy 氏が 2026 年 4 月の Sequoia AI Ascent で再定義した **
 
 **任意のプロジェクトに対して、品質ゲートが自律的に評価・サーチ・学習を行う Claude Code Plugin** です。
 
+#### 一番シンプルな使い方
+
+> **任意のフォルダにレビューしたい成果物一式（RFP・計画書・設計書・コード・ADR 等、何でも）を格納し、Claude Code に自然言語で「このフォルダの成果物をレビューして」と指示するだけ** ── あとは Plugin が次を全部やります：
+>
+> 1. **成果物の内容を自律的に把握**（フォルダ構造・命名・技術スタックを探索、ハードコードされたパス前提なし）
+> 2. **該当するフェーズ（P0 構想 / P1 設計 / P2 実装 / … / Cross-cutting）を特定**
+> 3. **そのフェーズで適用すべきチェック観点・評価指標を、ナレッジベース（176 件）から自動参照**
+> 4. **各観点について Pass / Conditional / Fail / N/A を引用付きで判定**
+> 5. **評価結果を Markdown 報告書として出力**（経営層 / レビュアー / 開発者の 3 視点で構造化）
+
 #### インストール
 
 ```bash
@@ -78,12 +88,29 @@ git clone https://github.com/kiwiiosaru-jp/agentic-quality-gate.git ~/.claude/pl
 # Claude Code を再起動
 ```
 
-#### 主要なスラッシュコマンド
+#### 実行例
+
+```bash
+# 一番シンプル
+/aqg:evaluate ~/projects/my-rfp-and-plan
+
+# あるいは、自然言語で
+「~/projects/my-rfp-and-plan にある成果物を agentic-quality-gate でレビューして」
+
+# スコープを絞る（提案書・計画書レビュー）
+/aqg:evaluate ~/projects/my-rfp-and-plan --scope=plan_review
+
+# 重大度で絞る（critical と high のみ）
+/aqg:evaluate ~/projects/my-app --scope=code_review --severity=critical,high
+```
+
+実行すると、`reports/{timestamp}_{プロジェクト名}.md` に評価結果が出力されます。
+
+#### 他の主要なスラッシュコマンド
 
 | コマンド | 用途 |
 |---|---|
-| `/aqg:evaluate /path/to/project` | **4 Phase パイプラインで成果物を品質評価**（Sensing → KB Refresh → Evaluation → Feedback） |
-| `/aqg:sense` | **外部変化サーチ**（NVD / GHSA / IPA / JPCERT / OWASP / PIPC / EDPB / HackerNews / Bluesky / GitHub Trending / Postmortems / X / arXiv / クラウド料金 / LLM Provider Release の 14 ソース） |
+| `/aqg:sense` | **外部変化サーチ**（NVD / GHSA / IPA / JPCERT / OWASP / PIPC / EDPB / HackerNews / Bluesky / GitHub Trending / Postmortems / X / arXiv / クラウド料金 / LLM Provider Release の 14 ソース）。tech_stack 関連度を採点して候補ナレッジを生成 |
 | `/aqg:incident` | **インシデント記録**（FP / 誤検知 / 気づきを構造化して蓄積） |
 | `/aqg:reflect` | **内省サイクル実行**（蓄積したインシデント・FP 率から候補ナレッジを再生成） |
 | `/aqg:checklist --phase=p2 --severity=critical,high` | **人間レビュー用チェックリスト出力**（フェーズ × 重大度で絞込） |
@@ -91,7 +118,7 @@ git clone https://github.com/kiwiiosaru-jp/agentic-quality-gate.git ~/.claude/pl
 
 #### 進化メカニズム
 
-- **Reactive**：評価実行 or `/aqg:sense` 起動時に外部変化を取込み → master.xlsx の `candidates` シートに候補追加 → 人間レビュー → 採用なら Checklist 昇格 → MD 再生成
+- **Reactive**：評価実行 or `/aqg:sense` 起動時に外部変化を取込み → `master.xlsx` の `candidates` シートに候補追加 → 人間レビュー → 採用なら Checklist 昇格 → MD 再生成
 - **Reflective**：`/aqg:reflect` で 4 モード分析（incidents 抽象化 / FP 率高エントリ検出 / Conditional 観点抽出 / 横断トレンド）→ 候補追加 → 人間レビュー
 
 詳細：[`plugin/README.md`](plugin/README.md)
