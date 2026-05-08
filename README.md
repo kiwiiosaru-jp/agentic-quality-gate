@@ -4,8 +4,6 @@
 
 Andrej Karpathy 氏が 2026 年 4 月の Sequoia AI Ascent で再定義した **Agentic Engineering** ──「品質バーを下げずにエージェントで加速する工学規律」── を、**プロ SI ベンダーがエンタープライズ顧客に納品できる品質まで持続させる** ための、Claude Code 上の実装と PoC 実証。
 
-🔗 **解説記事（Qiita）**: [Vibe Coding を Enterprise 品質まで引き上げる Agentic Quality Gate ── Karpathy の宿題に、プロ SIer の答案を](https://qiita.com/) *（公開準備中）*
-
 ---
 
 ## 何が含まれるか
