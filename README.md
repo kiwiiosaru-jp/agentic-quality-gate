@@ -50,7 +50,52 @@ Andrej Karpathy 氏が 2026 年 4 月の Sequoia AI Ascent で再定義した **
 
 ## 使い方
 
-### 基本フロー
+このリポジトリには **2 つのメインコンポーネント** が入っています。それぞれ単独でも使えますし、組み合わせて連携運用するのが推奨です。
+
+### 1. 品質ゲート（`agentic-quality-gate` Plugin）の使い方
+
+**任意のプロジェクトに対して、品質ゲートが自律的に評価・サーチ・学習を行う Claude Code Plugin** です。
+
+#### インストール
+
+```bash
+git clone https://github.com/kiwiiosaru-jp/agentic-quality-gate.git ~/.claude/plugins/agentic-quality-gate
+# Claude Code を再起動
+```
+
+#### 主要なスラッシュコマンド
+
+| コマンド | 用途 |
+|---|---|
+| `/aqg:evaluate /path/to/project` | **4 Phase パイプラインで成果物を品質評価**（Sensing → KB Refresh → Evaluation → Feedback） |
+| `/aqg:sense` | **外部変化サーチ**（NVD / GHSA / IPA / JPCERT / OWASP / PIPC / EDPB / HackerNews / Bluesky / GitHub Trending / Postmortems / X / arXiv / クラウド料金 / LLM Provider Release の 14 ソース） |
+| `/aqg:incident` | **インシデント記録**（FP / 誤検知 / 気づきを構造化して蓄積） |
+| `/aqg:reflect` | **内省サイクル実行**（蓄積したインシデント・FP 率から候補ナレッジを再生成） |
+| `/aqg:checklist --phase=p2 --severity=critical,high` | **人間レビュー用チェックリスト出力**（フェーズ × 重大度で絞込） |
+| `/aqg:claude-security` | **Claude Security 連携（スケルトン）** ── 後続リリースで本実装 |
+
+#### 進化メカニズム
+
+- **Reactive**：評価実行 or `/aqg:sense` 起動時に外部変化を取込み → master.xlsx の `candidates` シートに候補追加 → 人間レビュー → 採用なら Checklist 昇格 → MD 再生成
+- **Reflective**：`/aqg:reflect` で 4 モード分析（incidents 抽象化 / FP 率高エントリ検出 / Conditional 観点抽出 / 横断トレンド）→ 候補追加 → 人間レビュー
+
+詳細：[`plugin/README.md`](plugin/README.md)
+
+---
+
+### 2. プロジェクト計画自動作成（`pm-blueprint` Skill）の使い方
+
+**RFP / 要件概要から、プロジェクト計画書一式を 9 レイヤーで自律生成する Claude Code Skill** です。
+
+#### インストール
+
+```bash
+git clone https://github.com/kiwiiosaru-jp/agentic-quality-gate.git
+ln -s "$(pwd)/agentic-quality-gate/skill-pm-blueprint" ~/.claude/skills/pm-blueprint
+# Claude Code を再起動
+```
+
+#### 基本フロー
 
 1. プロジェクトの **RFP / 要件概要** を用意
 2. Claude Code で「`pm-blueprint` を使って [RFP 概要] から計画書を作って」と依頼
@@ -67,13 +112,30 @@ Andrej Karpathy 氏が 2026 年 4 月の Sequoia AI Ascent で再定義した **
    - **Step 9**: Layer 1 意思決定テンプレート
    - **Step 10**: Layer 6 WBS テンプレート + トレーサビリティ
 5. 最終的に **12 セクション以上のプロジェクト計画書一式** が生成されます
-6. 生成された計画書類を **`agentic-quality-gate` Plugin で評価** し、致命的問題 / 条件付合格 / 合格 を判定（[`plugin/`](plugin/) 参照）
 
-詳細：[`skill-pm-blueprint/examples/サンプル適用例.md`](skill-pm-blueprint/examples/サンプル適用例.md)
+詳細：[`skill-pm-blueprint/README.md`](skill-pm-blueprint/README.md) ／ [`skill-pm-blueprint/examples/サンプル適用例.md`](skill-pm-blueprint/examples/サンプル適用例.md)
 
-### Plugin（agentic-quality-gate）単独利用
+---
 
-Plugin 単体で「既存プロジェクトの品質評価」「外部変化サーチ」「インシデント記録」「内省サイクル」「チェックリスト出力」を行う場合は、[`plugin/README.md`](plugin/README.md) のスラッシュコマンド（`/aqg:evaluate`, `/aqg:sense`, `/aqg:incident`, `/aqg:reflect`, `/aqg:checklist` など）を参照してください。
+### 1 + 2 の連携利用（推奨）
+
+提案書作成や PoC 立ち上げの場面では、**「pm-blueprint で生成 → agentic-quality-gate で評価 → 改善ループ」** が最大効果を発揮します。
+
+```
+RFP / 要件概要
+    ↓
+pm-blueprint Skill が計画書一式を自律生成（12+ セクション）
+    ↓
+agentic-quality-gate Plugin（/aqg:evaluate）で 176 観点の評価
+    ↓
+致命的問題があれば → 改善指示を pm-blueprint に戻す → 再生成
+    ↓
+品質基準達成まで自動ループ（人間は方針承認のみ）
+```
+
+このループの実例（致命的問題 13 → 0 件 を一晩で達成、など）は、本リポジトリと連動する Qiita 記事で解説しています：
+
+🔗 *Qiita 記事 URL は公開準備中（公開後にここへ追記）*
 
 ---
 
